@@ -1,9 +1,10 @@
 import React from 'react';
 import { version } from '../../package.json';
-import { View, Text, FlatList, TouchableOpacity, StyleSheet } from 'react-native';
+import { View, Text, TouchableOpacity, StyleSheet, Dimensions } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { SwipeListView } from 'react-native-swipe-list-view';
 import { useInspectionStore } from '../stores/inspectionStore';
 import { useChecklist } from '../hooks/useChecklist';
 import { colors, spacing, radius, typography, card, navBar, verdictColor, verdictLabel } from '../theme';
@@ -13,22 +14,21 @@ import type { Inspection } from '../types';
 
 type Nav = NativeStackNavigationProp<RootStackParamList, 'Home'>;
 
+const SCREEN_W = Dimensions.get('window').width;
+const DELETE_BTN_W = 88;
+const FULL_SWIPE_PX = SCREEN_W * 0.45;
+
 export function HomeScreen() {
   const navigation = useNavigation<Nav>();
-  const { inspections, items } = useInspectionStore();
+  const { inspections, items, deleteInspection } = useInspectionStore();
   const { allItems } = useChecklist();
   const totalItems = allItems.length;
 
-  function cardData(inspection: Inspection) {
-    const storeItems = items[inspection.id] ?? [];
+  function renderItem({ item }: { item: Inspection }) {
+    const storeItems = items[item.id] ?? [];
     const checked = storeItems.filter(i => i.checked).length;
     const walkAway = storeItems.filter(i => i.flagged && i.severity === 'walk_away').length;
     const negotiate = storeItems.filter(i => i.flagged && i.severity === 'negotiate').length;
-    return { checked, walkAway, negotiate };
-  }
-
-  function renderCard({ item }: { item: Inspection }) {
-    const { checked, walkAway, negotiate } = cardData(item);
     const progress = totalItems > 0 ? checked / totalItems : 0;
 
     return (
@@ -38,7 +38,9 @@ export function HomeScreen() {
         activeOpacity={0.75}
       >
         <View style={s.cardTop}>
-          <Text style={[typography.h2, s.carName]}>{item.year} {item.make} {item.model}</Text>
+          <Text style={[typography.h2, s.carName]}>
+            {item.year} {item.make} {item.model}
+          </Text>
           <View style={[s.verdictBadge, { backgroundColor: verdictColor(item.verdict) }]}>
             <Text style={[typography.tiny, { color: colors.textInverse }]}>
               {verdictLabel(item.verdict)}
@@ -76,6 +78,27 @@ export function HomeScreen() {
     );
   }
 
+  function renderHiddenItem({ item }: { item: Inspection }) {
+    return (
+      <View style={s.hiddenRow}>
+        <TouchableOpacity
+          style={s.deleteBtn}
+          onPress={() => deleteInspection(item.id)}
+          activeOpacity={0.85}
+        >
+          <Text style={s.deleteBtnText}>Delete</Text>
+        </TouchableOpacity>
+      </View>
+    );
+  }
+
+  function onSwipeValueChange({ key, value }: { key: string; value: number }) {
+    // value is negative when swiping left; auto-delete past threshold
+    if (value < -FULL_SWIPE_PX) {
+      deleteInspection(key);
+    }
+  }
+
   return (
     <SafeAreaView style={s.root}>
       <View style={navBar.bar}>
@@ -87,10 +110,18 @@ export function HomeScreen() {
           <Text style={[typography.label, { color: colors.textInverse }]}>+ New</Text>
         </TouchableOpacity>
       </View>
-      <FlatList
+
+      <SwipeListView
         data={inspections}
         keyExtractor={i => i.id}
-        renderItem={renderCard}
+        renderItem={renderItem}
+        renderHiddenItem={renderHiddenItem}
+        rightOpenValue={-DELETE_BTN_W}
+        disableRightSwipe
+        closeOnScroll
+        closeOnRowPress
+        closeOnRowBeginSwipe
+        onSwipeValueChange={onSwipeValueChange}
         contentContainerStyle={inspections.length === 0 ? s.emptyWrap : s.listPad}
         ListEmptyComponent={
           <View style={s.emptyCenter}>
@@ -134,4 +165,24 @@ const s = StyleSheet.create({
   cardBottom: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
   flagRow: { flexDirection: 'row', gap: spacing.sm },
   flagBadge: { borderRadius: radius.sm, paddingHorizontal: 7, paddingVertical: 2 },
+  hiddenRow: {
+    flex: 1,
+    flexDirection: 'row',
+    justifyContent: 'flex-end',
+    alignItems: 'center',
+    paddingHorizontal: spacing.lg,
+  },
+  deleteBtn: {
+    width: DELETE_BTN_W,
+    height: '100%',
+    backgroundColor: colors.error,
+    justifyContent: 'center',
+    alignItems: 'center',
+    borderRadius: radius.md,
+  },
+  deleteBtnText: {
+    color: '#fff',
+    fontSize: 14,
+    fontWeight: '600',
+  },
 });
