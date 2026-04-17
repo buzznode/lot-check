@@ -1,4 +1,5 @@
 import React from 'react';
+import { version } from '../../package.json';
 import { View, Text, FlatList, TouchableOpacity, StyleSheet } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
@@ -78,7 +79,10 @@ export function HomeScreen() {
   return (
     <SafeAreaView style={s.root}>
       <View style={navBar.bar}>
-        <Text style={[typography.h1, { color: colors.textInverse }]}>LotCheck</Text>
+        <View style={{ flexDirection: 'row', alignItems: 'baseline', gap: 8 }}>
+          <Text style={[typography.h1, { color: colors.textInverse }]}>LotCheck</Text>
+          <Text style={{ fontSize: 12, color: colors.textInverse, opacity: 0.6, fontWeight: '500' }}>v{version}</Text>
+        </View>
         <TouchableOpacity style={s.newBtn} onPress={() => navigation.navigate('NewInspection')}>
           <Text style={[typography.label, { color: colors.textInverse }]}>+ New</Text>
         </TouchableOpacity>
