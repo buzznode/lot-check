@@ -1,0 +1,94 @@
+[
+  {
+    "id": "exterior",
+    "label": "Exterior",
+    "icon": "car",
+    "items": [
+      { "id": "ext_frame",       "category": "exterior", "label": "Frame or unibody damage",      "hint": "Look under car for bent metal, fresh welds, misaligned seams",                      "severity": "walk_away" },
+      { "id": "ext_flood",       "category": "exterior", "label": "Flood or water damage signs",  "hint": "Waterline stains in door jambs, rust in unusual spots, musty smell",               "severity": "walk_away" },
+      { "id": "ext_gaps",        "category": "exterior", "label": "Panel gaps & alignment",        "hint": "Uneven gaps between doors, hood, trunk suggest prior collision repair",             "severity": "negotiate" },
+      { "id": "ext_paint_match", "category": "exterior", "label": "Paint color matching",          "hint": "Check panels in sunlight — mismatched shades indicate repaint",                    "severity": "negotiate" },
+      { "id": "ext_rust",        "category": "exterior", "label": "Rust spots & bubbling paint",   "hint": "Check rocker panels, wheel arches, and undercarriage",                             "severity": "negotiate" },
+      { "id": "ext_glass",       "category": "exterior", "label": "Glass — chips, cracks, seals", "hint": "Windshield cracks spread; check all window seals for leaks",                       "severity": "negotiate" },
+      { "id": "ext_lights",      "category": "exterior", "label": "Lights — all operational",      "hint": "Headlights, taillights, turn signals, reverse, brake lights",                     "severity": "negotiate" },
+      { "id": "ext_tires",       "category": "exterior", "label": "Tires — tread depth & wear",   "hint": "Uneven wear suggests alignment or suspension issues",                              "severity": "negotiate" },
+      { "id": "ext_wheels",      "category": "exterior", "label": "Wheel condition",               "hint": "Curb rash, cracks, bent rims",                                                    "severity": "negotiate" },
+      { "id": "ext_doors",       "category": "exterior", "label": "Door operation",                "hint": "All doors open, close, and latch properly including hinge condition",              "severity": "negotiate" },
+      { "id": "ext_hood",        "category": "exterior", "label": "Hood & trunk latches",          "hint": "Secure, aligned, no gaps when closed",                                            "severity": "negotiate" },
+      { "id": "ext_mirrors",     "category": "exterior", "label": "Mirrors — condition",           "hint": "Power fold/adjust if equipped; no cracks",                                        "severity": "negotiate" },
+      { "id": "ext_wipers",      "category": "exterior", "label": "Wipers",                        "hint": "Blade condition, washer fluid spray",                                             "severity": "negotiate" },
+      { "id": "ext_exhaust",     "category": "exterior", "label": "Exhaust pipe condition",        "hint": "Excessive black soot, oil residue, or rust holes",                                "severity": "negotiate" }
+    ]
+  },
+  {
+    "id": "interior",
+    "label": "Interior",
+    "icon": "armchair",
+    "items": [
+      { "id": "int_odometer",  "category": "interior", "label": "Odometer rollback signs",       "hint": "Worn pedals / steering wheel inconsistent with low mileage",                       "severity": "walk_away" },
+      { "id": "int_mold",      "category": "interior", "label": "Mold, mildew, or musty smell",  "hint": "Check under seats and carpet edges — sign of water intrusion",                     "severity": "negotiate" },
+      { "id": "int_airbag",    "category": "interior", "label": "Airbag warning light",          "hint": "If illuminated, airbags may be deployed or disabled — costly fix",                  "severity": "negotiate" },
+      { "id": "int_dash",      "category": "interior", "label": "All dashboard warning lights",  "hint": "Start engine and note any persistent warning lights after warm-up",                "severity": "negotiate" },
+      { "id": "int_ac",        "category": "interior", "label": "AC & heat operation",           "hint": "Test all fan speeds and both hot/cold extremes",                                   "severity": "negotiate" },
+      { "id": "int_infotain",  "category": "interior", "label": "Infotainment & electronics",    "hint": "Radio, navigation, Bluetooth, backup camera, USB ports",                          "severity": "negotiate" },
+      { "id": "int_windows",   "category": "interior", "label": "Power windows & locks",         "hint": "All switches from both driver and passenger sides",                                "severity": "negotiate" },
+      { "id": "int_seats",     "category": "interior", "label": "Seat adjustment & condition",   "hint": "All positions, heating/cooling if equipped, no tears or burns",                    "severity": "negotiate" },
+      { "id": "int_belts",     "category": "interior", "label": "Seatbelts — retract & latch",  "hint": "All rows; check pretensioner status",                                              "severity": "negotiate" },
+      { "id": "int_sunroof",   "category": "interior", "label": "Sunroof operation",             "hint": "Opens, closes, tilts; check seal for leaks",                                      "severity": "negotiate" },
+      { "id": "int_trunk",     "category": "interior", "label": "Trunk space & spare tire",      "hint": "Spare present and inflated; jack and tools present",                              "severity": "negotiate" },
+      { "id": "int_pedals",    "category": "interior", "label": "Pedal condition",               "hint": "Worn-through rubber inconsistent with claimed mileage",                            "severity": "negotiate" }
+    ]
+  },
+  {
+    "id": "under_hood",
+    "label": "Under the hood",
+    "icon": "wrench",
+    "items": [
+      { "id": "hood_smoke",       "category": "under_hood", "label": "Smoke from engine bay",         "hint": "Any smoke color after warm-up is a serious red flag",                           "severity": "walk_away" },
+      { "id": "hood_oil_milky",   "category": "under_hood", "label": "Milky or frothy oil",           "hint": "Check dipstick — white/grey coloring indicates coolant mixing (head gasket)",   "severity": "walk_away" },
+      { "id": "hood_coolant_oil", "category": "under_hood", "label": "Coolant in oil or vice versa",  "hint": "Check coolant reservoir for oily film on cap",                                 "severity": "walk_away" },
+      { "id": "hood_oil",         "category": "under_hood", "label": "Oil level & condition",         "hint": "Low level or very dark/dirty oil suggests neglected maintenance",               "severity": "negotiate" },
+      { "id": "hood_coolant",     "category": "under_hood", "label": "Coolant level & condition",     "hint": "Should be between min/max; look for rust or debris in reservoir",              "severity": "negotiate" },
+      { "id": "hood_belts",       "category": "under_hood", "label": "Belt condition",                "hint": "Serpentine belt: check for cracks, fraying, glazing",                          "severity": "negotiate" },
+      { "id": "hood_hoses",       "category": "under_hood", "label": "Hose condition",                "hint": "Squeeze radiator hoses — should be firm, not soft, cracked, or bulging",       "severity": "negotiate" },
+      { "id": "hood_brake_fl",    "category": "under_hood", "label": "Brake fluid level",             "hint": "Should be at or near max line",                                                "severity": "negotiate" },
+      { "id": "hood_ps_fluid",    "category": "under_hood", "label": "Power steering fluid",          "hint": "Check level and color",                                                        "severity": "negotiate" },
+      { "id": "hood_trans_fl",    "category": "under_hood", "label": "Transmission fluid",            "hint": "Color should be red/pink, not brown or burnt-smelling",                       "severity": "negotiate" },
+      { "id": "hood_battery",     "category": "under_hood", "label": "Battery terminals",             "hint": "Check for corrosion, secure connection",                                       "severity": "negotiate" },
+      { "id": "hood_clean",       "category": "under_hood", "label": "Signs of recent cleaning",      "hint": "A suspiciously clean engine bay may be hiding leaks",                          "severity": "negotiate" }
+    ]
+  },
+  {
+    "id": "test_drive",
+    "label": "Test drive",
+    "icon": "road",
+    "items": [
+      { "id": "td_cel",          "category": "test_drive", "label": "Check engine or warning lights",  "hint": "Any persistent light after warm-up requires OBD scan before purchase",        "severity": "walk_away" },
+      { "id": "td_brake_pull",   "category": "test_drive", "label": "Pulls hard to one side braking",  "hint": "Indicates uneven braking — possible caliper or rotor issue",                 "severity": "walk_away" },
+      { "id": "td_steering_vib", "category": "test_drive", "label": "Vibration in steering wheel",     "hint": "At highway speed: wheels need balancing or alignment",                        "severity": "negotiate" },
+      { "id": "td_brakes",       "category": "test_drive", "label": "Brake feel & noise",              "hint": "Spongy pedal, grinding, or squealing under braking",                         "severity": "negotiate" },
+      { "id": "td_trans",        "category": "test_drive", "label": "Transmission shifts",             "hint": "Hard shifts, slipping, hesitation, or jerking between gears",                "severity": "negotiate" },
+      { "id": "td_engine_noise", "category": "test_drive", "label": "Unusual engine noises",           "hint": "Knocking, ticking, rattling at idle or under acceleration",                  "severity": "negotiate" },
+      { "id": "td_suspension",   "category": "test_drive", "label": "Suspension noise over bumps",     "hint": "Clunking or creaking suggests worn struts, ball joints, or sway bar links",  "severity": "negotiate" },
+      { "id": "td_cold_start",   "category": "test_drive", "label": "Cold start behavior",             "hint": "Ask to see a cold start — excessive smoke or rough idle is a concern",       "severity": "negotiate" },
+      { "id": "td_accel",        "category": "test_drive", "label": "Acceleration & throttle",         "hint": "Hesitation or stumble under full throttle",                                  "severity": "negotiate" },
+      { "id": "td_steering",     "category": "test_drive", "label": "Steering feel",                   "hint": "Loose, vague, or notchy steering can indicate wear",                         "severity": "negotiate" },
+      { "id": "td_ac_highway",   "category": "test_drive", "label": "AC performance at speed",         "hint": "Test on highway — some systems struggle under load",                         "severity": "negotiate" }
+    ]
+  },
+  {
+    "id": "documents",
+    "label": "Documents & history",
+    "icon": "file-text",
+    "items": [
+      { "id": "doc_title",        "category": "documents", "label": "Title — clean vs salvage",      "hint": "Salvage title = car was totaled; dramatically affects resale and insurability",  "severity": "walk_away" },
+      { "id": "doc_vin",          "category": "documents", "label": "VIN matches title, dash, jamb", "hint": "Mismatched VINs can indicate fraud or stolen vehicle",                         "severity": "walk_away" },
+      { "id": "doc_owners",       "category": "documents", "label": "Number of previous owners",     "hint": "More owners = harder to verify maintenance history",                            "severity": "negotiate" },
+      { "id": "doc_accident",     "category": "documents", "label": "Accident history (Carfax)",     "hint": "Run a report — seller should provide or split the cost",                       "severity": "negotiate" },
+      { "id": "doc_service",      "category": "documents", "label": "Service records",               "hint": "Oil changes, timing belt, major repairs — regularity matters",                 "severity": "negotiate" },
+      { "id": "doc_recall",       "category": "documents", "label": "Recall status",                 "hint": "Check NHTSA.gov — open recalls should be resolved before purchase",            "severity": "negotiate" },
+      { "id": "doc_registration", "category": "documents", "label": "Registration current",          "hint": "Verify tags are not expired",                                                  "severity": "negotiate" },
+      { "id": "doc_lien",         "category": "documents", "label": "Lien check",                    "hint": "Confirm no outstanding loan — seller must pay off before transfer",             "severity": "negotiate" }
+    ]
+  }
+]
