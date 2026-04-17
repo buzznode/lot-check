@@ -1,6 +1,6 @@
 {
   "name": "lotcheck",
-  "version": "1.1.0",
+  "version": "1.2.0",
   "main": "index.ts",
   "scripts": {
     "start": "expo start",
@@ -26,6 +26,7 @@
     "zustand": "^5.0.12"
   },
   "devDependencies": {
+    "@types/jest": "^30.0.0",
     "@types/react": "~19.1.0",
     "jest-expo": "~54.0.17",
     "typescript": "~5.9.2"
@@ -33,6 +34,8 @@
   "private": true,
   "jest": {
     "preset": "jest-expo",
-    "testMatch": ["<rootDir>/src/**/*.test.ts"]
+    "testMatch": [
+      "<rootDir>/src/**/*.test.ts"
+    ]
   }
 }

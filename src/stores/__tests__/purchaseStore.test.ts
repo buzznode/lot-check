@@ -14,13 +14,13 @@ beforeEach(() => {
 
 describe('addPurchase', () => {
   it('adds the record to purchases', () => {
-    store().addPurchase({ id: 'p1', productId: 'pdf_export', purchasedAt: '2026-04-17', verified: true });
+    store().addPurchase({ id: 'p1', platform: 'ios' as const, productId: 'pdf_export', transactionId: 'txn-1', purchasedAt: '2026-04-17', verified: true });
     expect(store().purchases).toHaveLength(1);
     expect(store().purchases[0].id).toBe('p1');
   });
 
   it('sets isUnlocked to true', () => {
-    store().addPurchase({ id: 'p1', productId: 'pdf_export', purchasedAt: '2026-04-17', verified: true });
+    store().addPurchase({ id: 'p1', platform: 'ios' as const, productId: 'pdf_export', transactionId: 'txn-1', purchasedAt: '2026-04-17', verified: true });
     expect(store().isUnlocked).toBe(true);
   });
 });
@@ -28,7 +28,7 @@ describe('addPurchase', () => {
 describe('restorePurchases', () => {
   it('sets isUnlocked true when a verified purchase exists', async () => {
     usePurchaseStore.setState({
-      purchases: [{ id: 'p1', productId: 'pdf_export', purchasedAt: '2026-04-17', verified: true }],
+      purchases: [{ id: 'p1', platform: 'ios' as const, productId: 'pdf_export', transactionId: 'txn-1', purchasedAt: '2026-04-17', verified: true }],
       isUnlocked: false,
     });
     await store().restorePurchases();
@@ -37,7 +37,7 @@ describe('restorePurchases', () => {
 
   it('sets isUnlocked false when no purchases are verified', async () => {
     usePurchaseStore.setState({
-      purchases: [{ id: 'p1', productId: 'pdf_export', purchasedAt: '2026-04-17', verified: false }],
+      purchases: [{ id: 'p1', platform: 'ios' as const, productId: 'pdf_export', transactionId: 'txn-1', purchasedAt: '2026-04-17', verified: false }],
       isUnlocked: true,
     });
     await store().restorePurchases();

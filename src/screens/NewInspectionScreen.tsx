@@ -7,6 +7,8 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import { useInspectionStore } from '../stores/inspectionStore';
+import { useVehicleAutocomplete } from '../hooks/useVehicleAutocomplete';
+import { AutocompleteField } from '../components/AutocompleteField';
 import { colors, spacing, radius, typography, card, navBar } from '../theme';
 import type { RootStackParamList } from '../navigation/RootNavigator';
 
@@ -15,6 +17,8 @@ type Nav = NativeStackNavigationProp<RootStackParamList, 'NewInspection'>;
 export function NewInspectionScreen() {
   const navigation = useNavigation<Nav>();
   const createInspection = useInspectionStore(s => s.createInspection);
+  const { makes, makesLoading, models, modelsLoading, fetchModelsForSelection } =
+    useVehicleAutocomplete();
 
   const [year, setYear] = useState('');
   const [make, setMake] = useState('');
@@ -22,11 +26,44 @@ export function NewInspectionScreen() {
   const [price, setPrice] = useState('');
   const [errors, setErrors] = useState<Record<string, string>>({});
 
+  const yearInt = parseInt(year, 10);
+  const yearValid = year.length === 4 && !isNaN(yearInt) && yearInt >= 1900;
+
+  const filteredMakes = makes.filter(m =>
+    m.toLowerCase().includes(make.toLowerCase())
+  );
+  const filteredModels = models.filter(m =>
+    m.toLowerCase().includes(model.toLowerCase())
+  );
+
+  function handleYearChange(t: string) {
+    setYear(t);
+    setErrors(e => ({ ...e, year: '' }));
+    const yr = parseInt(t, 10);
+    if (t.length === 4 && !isNaN(yr) && yr >= 1900 && make) {
+      fetchModelsForSelection(make, yr);
+    }
+  }
+
+  function handleMakeSelect(selected: string) {
+    setMake(selected);
+    setModel('');
+    setErrors(e => ({ ...e, make: '' }));
+    if (yearValid) {
+      fetchModelsForSelection(selected, yearInt);
+    }
+  }
+
+  function handleMakeChange(t: string) {
+    setMake(t);
+    setModel('');
+    setErrors(e => ({ ...e, make: '' }));
+  }
+
   function validate() {
     const e: Record<string, string> = {};
-    const yr = parseInt(year, 10);
     const maxYear = new Date().getFullYear() + 1;
-    if (!year || isNaN(yr) || yr < 1900 || yr > maxYear) {
+    if (!year || isNaN(yearInt) || yearInt < 1900 || yearInt > maxYear) {
       e.year = `Enter a year between 1900 and ${maxYear}`;
     }
     if (!make.trim()) e.make = 'Enter the make';
@@ -39,7 +76,7 @@ export function NewInspectionScreen() {
     if (!validate()) return;
     const askingPrice = price ? parseFloat(price.replace(/,/g, '')) : undefined;
     const inspection = createInspection(
-      parseInt(year, 10),
+      yearInt,
       make.trim(),
       model.trim(),
       askingPrice,
@@ -69,7 +106,7 @@ export function NewInspectionScreen() {
               <TextInput
                 style={[s.input, errors.year ? s.inputError : null]}
                 value={year}
-                onChangeText={t => { setYear(t); setErrors(e => ({ ...e, year: '' })); }}
+                onChangeText={handleYearChange}
                 placeholder="e.g. 2019"
                 keyboardType="number-pad"
                 maxLength={4}
@@ -80,26 +117,29 @@ export function NewInspectionScreen() {
             <View style={s.divider} />
 
             <Field label="Make" required error={errors.make}>
-              <TextInput
-                style={[s.input, errors.make ? s.inputError : null]}
+              <AutocompleteField
                 value={make}
-                onChangeText={t => { setMake(t); setErrors(e => ({ ...e, make: '' })); }}
+                onChangeText={handleMakeChange}
+                onSelect={handleMakeSelect}
+                suggestions={filteredMakes}
+                loading={makesLoading}
+                hasError={!!errors.make}
                 placeholder="e.g. Toyota"
-                autoCapitalize="words"
-                returnKeyType="next"
               />
             </Field>
 
             <View style={s.divider} />
 
             <Field label="Model" required error={errors.model}>
-              <TextInput
-                style={[s.input, errors.model ? s.inputError : null]}
+              <AutocompleteField
                 value={model}
                 onChangeText={t => { setModel(t); setErrors(e => ({ ...e, model: '' })); }}
-                placeholder="e.g. Camry"
-                autoCapitalize="words"
-                returnKeyType="next"
+                onSelect={m => { setModel(m); setErrors(e => ({ ...e, model: '' })); }}
+                suggestions={filteredModels}
+                loading={modelsLoading}
+                disabled={!make || !yearValid}
+                hasError={!!errors.model}
+                placeholder={make && yearValid ? 'e.g. Camry' : 'Enter make & year first'}
               />
             </Field>
 
