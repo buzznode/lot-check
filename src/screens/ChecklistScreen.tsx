@@ -1,7 +1,8 @@
-import React, { useState, useCallback, memo } from 'react';
+import React, { useState, useCallback, useRef, memo } from 'react';
 import {
   View, Text, FlatList, TouchableOpacity, StyleSheet,
-  TextInput, Image, ScrollView, Alert,
+  TextInput, Image, ScrollView, Alert, Keyboard,
+  KeyboardAvoidingView, Platform,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, useRoute } from '@react-navigation/native';
@@ -24,6 +25,7 @@ interface ItemCardProps {
   templateItem: ChecklistTemplateItem;
   storeItem?: InspectionItem;
   onUpdate: (templateId: string, patch: Partial<InspectionItem>) => void;
+  onNoteOpen: () => void;
 }
 
 const ChecklistItemCard = memo(function ChecklistItemCard({
@@ -31,6 +33,7 @@ const ChecklistItemCard = memo(function ChecklistItemCard({
   templateItem,
   storeItem,
   onUpdate,
+  onNoteOpen,
 }: ItemCardProps) {
   const checked = storeItem?.checked ?? false;
   const flagged = storeItem?.flagged ?? false;
@@ -100,6 +103,16 @@ const ChecklistItemCard = memo(function ChecklistItemCard({
     ]);
   }
 
+  function handleNoteToggle() {
+    if (noteOpen) {
+      Keyboard.dismiss();
+      setNoteOpen(false);
+    } else {
+      setNoteOpen(true);
+      onNoteOpen();
+    }
+  }
+
   function handleRemovePhoto(uri: string) {
     onUpdate(templateItem.id, { photoUris: photoUris.filter(u => u !== uri) });
   }
@@ -164,7 +177,7 @@ const ChecklistItemCard = memo(function ChecklistItemCard({
             </TouchableOpacity>
             <TouchableOpacity
               style={[s.actionBtn, (noteOpen || note) && s.actionBtnActive]}
-              onPress={() => setNoteOpen(o => !o)}
+              onPress={handleNoteToggle}
             >
               <Text style={[s.actionBtnText, (noteOpen || note) && { color: colors.brand }]}>
                 📝  Note{note ? ' ✓' : ''}
@@ -173,16 +186,23 @@ const ChecklistItemCard = memo(function ChecklistItemCard({
           </View>
 
           {/* Note input */}
-          {(noteOpen || !!note) && (
-            <TextInput
-              style={s.noteInput}
-              value={note}
-              onChangeText={t => onUpdate(templateItem.id, { note: t })}
-              placeholder="Add a note about this item…"
-              placeholderTextColor={colors.textSecondary}
-              multiline
-              autoFocus={noteOpen && !note}
-            />
+          {noteOpen && (
+            <View>
+              <View style={s.noteDoneRow}>
+                <TouchableOpacity onPress={handleNoteToggle}>
+                  <Text style={s.noteDoneText}>Done</Text>
+                </TouchableOpacity>
+              </View>
+              <TextInput
+                style={s.noteInput}
+                value={note}
+                onChangeText={t => onUpdate(templateItem.id, { note: t })}
+                placeholder="Add a note about this item…"
+                placeholderTextColor={colors.textSecondary}
+                multiline
+                autoFocus={!note}
+              />
+            </View>
           )}
 
           {/* Photo thumbnails */}
@@ -214,6 +234,7 @@ export function ChecklistScreen() {
   const { params: { inspectionId, categoryId } } = useRoute<Route>();
   const { items: storeItems, updateItem } = useInspectionStore();
   const { categories } = useChecklist();
+  const flatListRef = useRef<FlatList<ChecklistTemplateItem>>(null);
 
   const categoryIndex = categories.findIndex(c => c.id === categoryId);
   const category = categories[categoryIndex];
@@ -234,7 +255,7 @@ export function ChecklistScreen() {
 
   if (!category) return null;
 
-  function renderItem({ item: templateItem }: { item: ChecklistTemplateItem }) {
+  function renderItem({ item: templateItem, index }: { item: ChecklistTemplateItem; index: number }) {
     const storeItem = inspItems.find(i => i.templateItemId === templateItem.id);
     return (
       <ChecklistItemCard
@@ -242,6 +263,11 @@ export function ChecklistScreen() {
         templateItem={templateItem}
         storeItem={storeItem}
         onUpdate={handleUpdate}
+        onNoteOpen={() => {
+          setTimeout(() => {
+            flatListRef.current?.scrollToIndex({ index, animated: true, viewPosition: 0 });
+          }, 150);
+        }}
       />
     );
   }
@@ -259,12 +285,15 @@ export function ChecklistScreen() {
         <View style={{ width: 60 }} />
       </View>
 
+      <KeyboardAvoidingView behavior={Platform.OS === 'ios' ? 'padding' : 'height'} style={{ flex: 1 }}>
       <FlatList
+        ref={flatListRef}
         data={category.items}
         keyExtractor={i => i.id}
         renderItem={renderItem}
         keyboardShouldPersistTaps="handled"
         contentContainerStyle={s.list}
+        onScrollToIndexFailed={() => {}}
         ItemSeparatorComponent={() => <View style={s.separator} />}
         ListFooterComponent={
           <TouchableOpacity
@@ -281,6 +310,7 @@ export function ChecklistScreen() {
           </TouchableOpacity>
         }
       />
+      </KeyboardAvoidingView>
     </SafeAreaView>
   );
 }
@@ -340,6 +370,9 @@ const s = StyleSheet.create({
   },
   actionBtnActive: { borderColor: colors.brand, backgroundColor: '#EAF4F1' },
   actionBtnText: { fontSize: 13, color: colors.textSecondary, fontWeight: '500' },
+
+  noteDoneRow: { flexDirection: 'row', justifyContent: 'flex-end', marginBottom: 4 },
+  noteDoneText: { fontSize: 13, fontWeight: '600', color: colors.brand, paddingVertical: 2, paddingHorizontal: 4 },
 
   noteInput: {
     borderWidth: 1, borderColor: colors.border, borderRadius: radius.sm,
