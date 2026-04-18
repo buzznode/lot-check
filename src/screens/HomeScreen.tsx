@@ -9,6 +9,7 @@ import { useInspectionStore } from '../stores/inspectionStore';
 import { useChecklist } from '../hooks/useChecklist';
 import { colors, spacing, radius, typography, card, navBar, verdictColor, verdictLabel } from '../theme';
 import { ProgressBar } from '../components/ProgressBar';
+import { LotCheckMark } from '../components/LotCheckMark';
 import type { RootStackParamList } from '../navigation/RootNavigator';
 import type { Inspection } from '../types';
 
@@ -102,15 +103,19 @@ export function HomeScreen() {
   return (
     <SafeAreaView style={s.root}>
       <View style={navBar.bar}>
-        <View style={{ flexDirection: 'row', alignItems: 'baseline', gap: 8 }}>
-          <Text style={[typography.h1, { color: colors.textInverse }]}>LotCheck</Text>
-          <Text style={{ fontSize: 12, color: colors.textInverse, opacity: 0.6, fontWeight: '500' }}>v{version}</Text>
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 10 }}>
+          <LotCheckMark size={30} />
+          <View style={{ flexDirection: 'row', alignItems: 'baseline', gap: 6 }}>
+            <Text style={[typography.h1, { color: colors.textInverse }]}>LotCheck</Text>
+            <Text style={{ fontSize: 12, color: colors.textInverse, opacity: 0.6, fontWeight: '500' }}>v{version}</Text>
+          </View>
         </View>
         <TouchableOpacity style={s.newBtn} onPress={() => navigation.navigate('NewInspection')}>
           <Text style={[typography.label, { color: colors.textInverse }]}>+ New</Text>
         </TouchableOpacity>
       </View>
 
+      <View style={s.listArea}>
       <SwipeListView
         data={inspections}
         keyExtractor={i => i.id}
@@ -135,18 +140,20 @@ export function HomeScreen() {
           </View>
         }
       />
+      </View>
     </SafeAreaView>
   );
 }
 
 const s = StyleSheet.create({
-  root: { flex: 1, backgroundColor: colors.bg },
+  root: { flex: 1, backgroundColor: colors.brand },
   newBtn: {
     backgroundColor: 'rgba(255,255,255,0.2)',
     borderRadius: radius.full,
     paddingHorizontal: 14,
     paddingVertical: 6,
   },
+  listArea: { flex: 1, backgroundColor: colors.bg },
   listPad: { padding: spacing.lg, gap: spacing.md },
   emptyWrap: { flex: 1, justifyContent: 'center', alignItems: 'center', padding: spacing.xxl },
   emptyCenter: { alignItems: 'center' },
