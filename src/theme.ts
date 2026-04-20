@@ -1,7 +1,7 @@
 import { StyleSheet } from 'react-native';
 
 export const colors = {
-  brand: '#0F6E56',
+  brand: '#1A3A5C',
   walkAway: '#E24B4A',
   negotiate: '#EF9F27',
   pass: '#639922',

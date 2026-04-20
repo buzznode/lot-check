@@ -12,7 +12,7 @@ export type RootStackParamList = {
   Home: undefined;
   NewInspection: undefined;
   Category: { inspectionId: string };
-  Checklist: { inspectionId: string; categoryId: string };
+  Checklist: { inspectionId: string; categoryId: string; scrollToItemId?: string };
   Summary: { inspectionId: string };
 };
 

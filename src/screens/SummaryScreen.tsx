@@ -1,13 +1,17 @@
-import React from 'react';
+import React, { useState } from 'react';
 import {
-  View, Text, ScrollView, TouchableOpacity, StyleSheet, Share, Alert,
+  View, Text, ScrollView, TouchableOpacity, StyleSheet, Share, Alert, ActivityIndicator,
 } from 'react-native';
+import * as Print from 'expo-print';
+import * as Sharing from 'expo-sharing';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
 import type { RouteProp } from '@react-navigation/native';
 import { useInspectionStore } from '../stores/inspectionStore';
+import { usePurchaseStore } from '../stores/purchaseStore';
 import { useChecklist } from '../hooks/useChecklist';
+import { PdfExportService } from '../services/PdfExportService';
 import { computeSummary, verdictLabel } from '../utils/verdict';
 import { colors, spacing, radius, typography, card, navBar, verdictColor } from '../theme';
 import type { RootStackParamList } from '../navigation/RootNavigator';
@@ -25,12 +29,28 @@ export function SummaryScreen() {
   const navigation = useNavigation<Nav>();
   const { params: { inspectionId } } = useRoute<Route>();
   const { inspections, getItems } = useInspectionStore();
-  const { itemMap } = useChecklist();
+  const { itemMap, categories } = useChecklist();
+  const { isUnlocked } = usePurchaseStore();
+  const canExportPdf = isUnlocked || __DEV__;
+  const [pdfLoading, setPdfLoading] = useState(false);
 
   const inspection = inspections.find(i => i.id === inspectionId);
   const storeItems = getItems(inspectionId);
   const summary = computeSummary(storeItems);
   const vColor = verdictColor(summary.verdict);
+
+  const [walkAwayOpen, setWalkAwayOpen] = useState(true);
+  const [negotiateOpen, setNegotiateOpen] = useState(true);
+
+  function categoryForItem(templateItemId: string) {
+    return categories.find(c => c.items.some(i => i.id === templateItemId));
+  }
+
+  function handleItemPress(templateItemId: string) {
+    const cat = categoryForItem(templateItemId);
+    if (!cat) return;
+    navigation.navigate('Checklist', { inspectionId, categoryId: cat.id, scrollToItemId: templateItemId });
+  }
 
   const flaggedItems = storeItems
     .filter(i => i.flagged)
@@ -76,15 +96,29 @@ export function SummaryScreen() {
     await Share.share({ message: buildShareText() });
   }
 
-  function handlePdfExport() {
-    Alert.alert(
-      'Unlock PDF Export',
-      'Export a full professional report as a PDF for $3.99 — one-time purchase.',
-      [
-        { text: 'Not Now', style: 'cancel' },
-        { text: 'Unlock — $3.99', onPress: () => Alert.alert('Coming Soon', 'In-app purchase will be available in the next update.') },
-      ],
-    );
+  async function handlePdfExport() {
+    if (!canExportPdf) {
+      Alert.alert(
+        'Unlock PDF Export',
+        'Export a full professional report as a PDF for $3.99 — one-time purchase.',
+        [
+          { text: 'Not Now', style: 'cancel' },
+          { text: 'Unlock — $3.99', onPress: () => Alert.alert('Coming Soon', 'In-app purchase will be available in the next update.') },
+        ],
+      );
+      return;
+    }
+    if (!inspection) return;
+    setPdfLoading(true);
+    try {
+      const html = PdfExportService.buildHtml(inspection, storeItems, categories, { includeAllItems: true, includePhotos: false });
+      const { uri } = await Print.printToFileAsync({ html });
+      await Sharing.shareAsync(uri, { mimeType: 'application/pdf', UTI: 'com.adobe.pdf' });
+    } catch (e) {
+      Alert.alert('Export failed', 'Something went wrong generating the PDF.');
+    } finally {
+      setPdfLoading(false);
+    }
   }
 
   return (
@@ -124,38 +158,50 @@ export function SummaryScreen() {
         {/* Walk away flags */}
         {walkAwayFlags.length > 0 && (
           <View style={s.section}>
-            <Text style={s.sectionLabel}>🚫  Walk Away Issues</Text>
-            <View style={card.base}>
-              {walkAwayFlags.map(({ storeItem, template }, i) => (
-                <View key={storeItem.id}>
-                  {i > 0 && <View style={s.itemDivider} />}
-                  <FlagRow
-                    label={template.label}
-                    note={storeItem.note}
-                    color={colors.walkAway}
-                  />
-                </View>
-              ))}
-            </View>
+            <TouchableOpacity style={s.accordionHeader} onPress={() => setWalkAwayOpen(o => !o)} activeOpacity={0.7}>
+              <Text style={s.sectionLabel}>🚫  Walk Away Issues ({walkAwayFlags.length})</Text>
+              <Text style={s.chevron}>{walkAwayOpen ? '▾' : '›'}</Text>
+            </TouchableOpacity>
+            {walkAwayOpen && (
+              <View style={card.base}>
+                {walkAwayFlags.map(({ storeItem, template }, i) => (
+                  <View key={storeItem.id}>
+                    {i > 0 && <View style={s.itemDivider} />}
+                    <FlagRow
+                      label={template.label}
+                      note={storeItem.note}
+                      color={colors.walkAway}
+                      onPress={() => handleItemPress(storeItem.templateItemId)}
+                    />
+                  </View>
+                ))}
+              </View>
+            )}
           </View>
         )}
 
         {/* Negotiate flags */}
         {negotiateFlags.length > 0 && (
           <View style={s.section}>
-            <Text style={s.sectionLabel}>⚠️  Negotiate Issues</Text>
-            <View style={card.base}>
-              {negotiateFlags.map(({ storeItem, template }, i) => (
-                <View key={storeItem.id}>
-                  {i > 0 && <View style={s.itemDivider} />}
-                  <FlagRow
-                    label={template.label}
-                    note={storeItem.note}
-                    color={colors.negotiate}
-                  />
-                </View>
-              ))}
-            </View>
+            <TouchableOpacity style={s.accordionHeader} onPress={() => setNegotiateOpen(o => !o)} activeOpacity={0.7}>
+              <Text style={s.sectionLabel}>⚠️  Negotiate Issues ({negotiateFlags.length})</Text>
+              <Text style={s.chevron}>{negotiateOpen ? '▾' : '›'}</Text>
+            </TouchableOpacity>
+            {negotiateOpen && (
+              <View style={card.base}>
+                {negotiateFlags.map(({ storeItem, template }, i) => (
+                  <View key={storeItem.id}>
+                    {i > 0 && <View style={s.itemDivider} />}
+                    <FlagRow
+                      label={template.label}
+                      note={storeItem.note}
+                      color={colors.negotiate}
+                      onPress={() => handleItemPress(storeItem.templateItemId)}
+                    />
+                  </View>
+                ))}
+              </View>
+            )}
           </View>
         )}
 
@@ -171,12 +217,19 @@ export function SummaryScreen() {
             <Text style={[typography.h3, { color: colors.brand }]}>Share Summary</Text>
           </TouchableOpacity>
 
-          <TouchableOpacity style={s.pdfBtn} onPress={handlePdfExport} activeOpacity={0.85}>
+          <TouchableOpacity style={s.pdfBtn} onPress={handlePdfExport} activeOpacity={0.85} disabled={pdfLoading}>
             <View style={s.pdfBtnInner}>
-              <Text style={[typography.h3, { color: colors.textInverse }]}>Export PDF Report</Text>
-              <View style={s.pdfLockBadge}>
-                <Text style={s.pdfLockText}>$3.99</Text>
-              </View>
+              {pdfLoading
+                ? <ActivityIndicator color={colors.textInverse} />
+                : <>
+                    <Text style={[typography.h3, { color: colors.textInverse }]}>Export PDF Report</Text>
+                    {!canExportPdf && (
+                      <View style={s.pdfLockBadge}>
+                        <Text style={s.pdfLockText}>$3.99</Text>
+                      </View>
+                    )}
+                  </>
+              }
             </View>
           </TouchableOpacity>
         </View>
@@ -194,20 +247,21 @@ function StatCell({ value, label, color }: { value: number; label: string; color
   );
 }
 
-function FlagRow({ label, note, color }: { label: string; note?: string; color: string }) {
+function FlagRow({ label, note, color, onPress }: { label: string; note?: string; color: string; onPress: () => void }) {
   return (
-    <View style={s.flagRow}>
+    <TouchableOpacity style={s.flagRow} onPress={onPress} activeOpacity={0.7}>
       <View style={[s.flagDot, { backgroundColor: color }]} />
       <View style={s.flagText}>
         <Text style={typography.body}>{label}</Text>
         {!!note && <Text style={[typography.caption, { marginTop: 2 }]}>{note}</Text>}
       </View>
-    </View>
+      <Text style={s.flagChevron}>›</Text>
+    </TouchableOpacity>
   );
 }
 
 const s = StyleSheet.create({
-  root: { flex: 1, backgroundColor: colors.bg },
+  root: { flex: 1, backgroundColor: colors.brand },
   content: { padding: spacing.lg, gap: spacing.lg, paddingBottom: spacing.xxl },
 
   verdictBanner: {
@@ -226,15 +280,18 @@ const s = StyleSheet.create({
   statDivider: { width: 1, backgroundColor: colors.border, marginVertical: spacing.xs },
 
   section: { gap: spacing.sm },
-  sectionLabel: {
-    fontSize: 13, fontWeight: '700', color: colors.text,
+  accordionHeader: {
+    flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between',
     marginLeft: spacing.xs,
   },
+  sectionLabel: { fontSize: 13, fontWeight: '700', color: colors.textInverse },
+  chevron: { fontSize: 18, color: 'rgba(255,255,255,0.7)', fontWeight: '600' },
 
   itemDivider: { height: 1, backgroundColor: colors.border },
   flagRow: { flexDirection: 'row', alignItems: 'flex-start', gap: spacing.md, padding: spacing.sm },
   flagDot: { width: 10, height: 10, borderRadius: radius.full, marginTop: 5, flexShrink: 0 },
   flagText: { flex: 1 },
+  flagChevron: { fontSize: 18, color: colors.textSecondary, alignSelf: 'center' },
 
   allClearCard: { alignItems: 'center', paddingVertical: spacing.xl },
   allClearText: { fontSize: 16, fontWeight: '600', color: colors.pass },

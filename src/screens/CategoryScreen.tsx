@@ -1,5 +1,11 @@
 import React from 'react';
-import { View, Text, FlatList, TouchableOpacity, StyleSheet } from 'react-native';
+import {
+  View,
+  Text,
+  FlatList,
+  TouchableOpacity,
+  StyleSheet,
+} from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -16,7 +22,7 @@ type Route = RouteProp<RootStackParamList, 'Category'>;
 
 const CATEGORY_ICONS: Record<string, string> = {
   exterior: '🚗',
-  interior: '🪑',
+  interior: '🎛️',
   under_hood: '🔧',
   test_drive: '🛣️',
   documents: '📄',
@@ -24,24 +30,30 @@ const CATEGORY_ICONS: Record<string, string> = {
 
 export function CategoryScreen() {
   const navigation = useNavigation<Nav>();
-  const { params: { inspectionId } } = useRoute<Route>();
+  const {
+    params: { inspectionId },
+  } = useRoute<Route>();
   const { inspections, items: storeItems } = useInspectionStore();
   const { categories, allItems } = useChecklist();
 
-  const inspection = inspections.find(i => i.id === inspectionId);
+  const inspection = inspections.find((i) => i.id === inspectionId);
   const inspItems = storeItems[inspectionId] ?? [];
-  const totalChecked = inspItems.filter(i => i.checked).length;
+  const totalChecked = inspItems.filter((i) => i.checked).length;
   const totalItems = allItems.length;
   const overallProgress = totalItems > 0 ? totalChecked / totalItems : 0;
 
   function categoryStats(cat: ChecklistCategory) {
-    const catIds = new Set(cat.items.map(i => i.id));
-    const catItems = inspItems.filter(i => catIds.has(i.templateItemId));
+    const catIds = new Set(cat.items.map((i) => i.id));
+    const catItems = inspItems.filter((i) => catIds.has(i.templateItemId));
     return {
-      checked: catItems.filter(i => i.checked).length,
+      checked: catItems.filter((i) => i.checked).length,
       total: cat.items.length,
-      hasWalkAway: catItems.some(i => i.flagged && i.severity === 'walk_away'),
-      hasNegotiate: catItems.some(i => i.flagged && i.severity === 'negotiate'),
+      hasWalkAway: catItems.some(
+        (i) => i.flagged && i.severity === 'walk_away',
+      ),
+      hasNegotiate: catItems.some(
+        (i) => i.flagged && i.severity === 'negotiate',
+      ),
     };
   }
 
@@ -53,20 +65,33 @@ export function CategoryScreen() {
     return (
       <TouchableOpacity
         style={s.row}
-        onPress={() => navigation.navigate('Checklist', { inspectionId, categoryId: cat.id })}
+        onPress={() =>
+          navigation.navigate('Checklist', { inspectionId, categoryId: cat.id })
+        }
         activeOpacity={0.75}
       >
         <Text style={s.icon}>{CATEGORY_ICONS[cat.id] ?? '📋'}</Text>
         <View style={s.rowBody}>
           <View style={s.rowTop}>
-            <Text style={[typography.h3, done && { color: colors.brand }]}>{cat.label}</Text>
+            <Text style={[typography.h3, { color: colors.brand }]}>
+              {cat.label}
+            </Text>
             <View style={s.dotRow}>
-              {hasWalkAway && <View style={[s.dot, { backgroundColor: colors.walkAway }]} />}
-              {hasNegotiate && <View style={[s.dot, { backgroundColor: colors.negotiate }]} />}
+              {hasWalkAway && (
+                <View style={[s.dot, { backgroundColor: colors.walkAway }]} />
+              )}
+              {hasNegotiate && (
+                <View style={[s.dot, { backgroundColor: colors.negotiate }]} />
+              )}
             </View>
           </View>
-          <ProgressBar value={progress} color={done ? colors.pass : colors.brand} />
-          <Text style={typography.caption}>{checked}/{total} items</Text>
+          <ProgressBar
+            value={progress}
+            color={done ? colors.pass : colors.brand}
+          />
+          <Text style={typography.caption}>
+            {checked}/{total} items
+          </Text>
         </View>
         <Text style={s.chevron}>›</Text>
       </TouchableOpacity>
@@ -80,17 +105,27 @@ export function CategoryScreen() {
   return (
     <SafeAreaView style={s.root}>
       <View style={navBar.bar}>
-        <TouchableOpacity style={navBar.backBtn} onPress={() => navigation.goBack()}>
+        <TouchableOpacity
+          style={navBar.backBtn}
+          onPress={() => navigation.goBack()}
+        >
           <Text style={navBar.backText}>‹ Back</Text>
         </TouchableOpacity>
-        <Text style={[navBar.title, s.navTitleText]} numberOfLines={1}>{inspectionTitle}</Text>
+        <Text style={[navBar.title, s.navTitleText]} numberOfLines={1}>
+          {inspectionTitle}
+        </Text>
         <View style={{ width: 60 }} />
       </View>
 
       <View style={s.overallWrap}>
         <View style={s.overallRow}>
           <Text style={typography.caption}>Overall progress</Text>
-          <Text style={[typography.caption, { fontWeight: '600', color: colors.text }]}>
+          <Text
+            style={[
+              typography.caption,
+              { fontWeight: '600', color: colors.text },
+            ]}
+          >
             {totalChecked}/{totalItems}
           </Text>
         </View>
@@ -99,7 +134,7 @@ export function CategoryScreen() {
 
       <FlatList
         data={categories}
-        keyExtractor={c => c.id}
+        keyExtractor={(c) => c.id}
         renderItem={renderRow}
         contentContainerStyle={s.list}
         ItemSeparatorComponent={() => <View style={s.separator} />}
@@ -108,12 +143,18 @@ export function CategoryScreen() {
       {totalChecked > 0 && (
         <View style={s.footer}>
           <TouchableOpacity
-            style={[s.summaryBtn, totalChecked < totalItems && s.summaryBtnPartial]}
+            style={[
+              s.summaryBtn,
+              totalChecked < totalItems && s.summaryBtnPartial,
+            ]}
             onPress={() => navigation.navigate('Summary', { inspectionId })}
             activeOpacity={0.85}
           >
-            <Text style={[typography.h3, { color: colors.textInverse }]}>
-              {totalChecked === totalItems ? 'View Summary' : `View Summary (${totalChecked}/${totalItems})`}
+            <Text style={[typography.h3, { color: colors.brand }]}>
+              {totalChecked === totalItems
+                ? 'View Summary'
+                : `
+              w${totalChecked}/${totalItems})`}
             </Text>
           </TouchableOpacity>
         </View>
@@ -123,7 +164,7 @@ export function CategoryScreen() {
 }
 
 const s = StyleSheet.create({
-  root: { flex: 1, backgroundColor: colors.bg },
+  root: { flex: 1, backgroundColor: colors.brand },
   navTitleText: { flex: 1, textAlign: 'center' },
   overallWrap: {
     backgroundColor: colors.card,
@@ -157,28 +198,31 @@ const s = StyleSheet.create({
   },
   icon: { fontSize: 22, width: 28, textAlign: 'center' },
   rowBody: { flex: 1, gap: spacing.xs },
-  rowTop: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center' },
+  rowTop: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+  },
   dotRow: { flexDirection: 'row', gap: spacing.xs },
   dot: { width: 8, height: 8, borderRadius: radius.full },
   chevron: { fontSize: 22, color: colors.textSecondary },
   footer: {
     padding: spacing.lg,
     paddingBottom: spacing.xl,
-    backgroundColor: colors.bg,
+    backgroundColor: colors.brand,
   },
   summaryBtn: {
-    backgroundColor: colors.brand,
+    backgroundColor: colors.textInverse,
     borderRadius: radius.lg,
     paddingVertical: 16,
     alignItems: 'center',
-    shadowColor: colors.brand,
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 8,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.12,
+    shadowRadius: 6,
     elevation: 4,
   },
   summaryBtnPartial: {
-    backgroundColor: colors.textSecondary,
-    shadowColor: colors.textSecondary,
+    opacity: 0.6,
   },
 });

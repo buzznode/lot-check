@@ -1,7 +1,7 @@
 {
   "expo": {
-    "name": "LotCheck-base",
-    "slug": "LotCheck-base",
+    "name": "Lot Check",
+    "slug": "LotCheck",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/icon.png",
@@ -14,7 +14,7 @@
     },
     "ios": {
       "supportsTablet": true,
-      "bundleIdentifier": "com.anonymous.LotCheck-base"
+      "bundleIdentifier": "com.buzznode.lotcheck"
     },
     "android": {
       "adaptiveIcon": {

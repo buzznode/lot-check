@@ -196,7 +196,7 @@ function Field({
 }
 
 const s = StyleSheet.create({
-  root: { flex: 1, backgroundColor: colors.bg },
+  root: { flex: 1, backgroundColor: colors.brand },
   content: { padding: spacing.lg },
   sectionLabel: {
     fontSize: 12,

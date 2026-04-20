@@ -1,8 +1,8 @@
-import React, { useState, useCallback, useRef, memo } from 'react';
+import React, { useState, useCallback, useRef, useEffect, memo } from 'react';
 import {
   View, Text, FlatList, TouchableOpacity, StyleSheet,
   TextInput, Image, ScrollView, Alert, Keyboard,
-  KeyboardAvoidingView, Platform,
+  KeyboardAvoidingView, Platform, Modal,
 } from 'react-native';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, useRoute } from '@react-navigation/native';
@@ -26,6 +26,8 @@ interface ItemCardProps {
   storeItem?: InspectionItem;
   onUpdate: (templateId: string, patch: Partial<InspectionItem>) => void;
   onNoteOpen: () => void;
+  onPhotoPress: (uri: string) => void;
+  defaultExpanded?: boolean;
 }
 
 const ChecklistItemCard = memo(function ChecklistItemCard({
@@ -34,6 +36,8 @@ const ChecklistItemCard = memo(function ChecklistItemCard({
   storeItem,
   onUpdate,
   onNoteOpen,
+  onPhotoPress,
+  defaultExpanded = false,
 }: ItemCardProps) {
   const checked = storeItem?.checked ?? false;
   const flagged = storeItem?.flagged ?? false;
@@ -41,6 +45,7 @@ const ChecklistItemCard = memo(function ChecklistItemCard({
   const note = storeItem?.note ?? '';
   const photoUris = storeItem?.photoUris ?? [];
   const [noteOpen, setNoteOpen] = useState(false);
+  const [expanded, setExpanded] = useState(defaultExpanded);
 
   function activeSeverity(): 'pass' | Severity {
     if (!flagged) return 'pass';
@@ -56,9 +61,33 @@ const ChecklistItemCard = memo(function ChecklistItemCard({
   function handleToggleCheck() {
     if (!checked) {
       onUpdate(templateItem.id, { checked: true, flagged: false });
+      setExpanded(true);
     } else {
       onUpdate(templateItem.id, { checked: false, flagged: false, severity: undefined });
+      setExpanded(false);
     }
+  }
+
+  function handleRowPress() {
+    if (!checked) {
+      onUpdate(templateItem.id, { checked: true, flagged: false });
+      setExpanded(true);
+    } else {
+      setExpanded(e => !e);
+    }
+  }
+
+  function handleClearItem() {
+    Alert.alert('Clear this item?', 'This will remove all photos, notes, and flags.', [
+      {
+        text: 'Clear', style: 'destructive', onPress: () => {
+          onUpdate(templateItem.id, { checked: false, flagged: false, severity: undefined, note: '', photoUris: [] });
+          setExpanded(false);
+          setNoteOpen(false);
+        },
+      },
+      { text: 'Cancel', style: 'cancel' },
+    ]);
   }
 
   function handleSeverity(sel: 'pass' | Severity) {
@@ -122,7 +151,7 @@ const ChecklistItemCard = memo(function ChecklistItemCard({
   return (
     <View style={s.item}>
       {/* Main row */}
-      <View style={s.itemRow}>
+      <TouchableOpacity style={s.itemRow} onPress={handleRowPress} activeOpacity={0.7}>
         <TouchableOpacity
           style={[s.circle, { borderColor: circleColor() === 'transparent' ? colors.border : circleColor(), backgroundColor: circleColor() }]}
           onPress={handleToggleCheck}
@@ -145,10 +174,10 @@ const ChecklistItemCard = memo(function ChecklistItemCard({
             </Text>
           </View>
         )}
-      </View>
+      </TouchableOpacity>
 
       {/* Expanded controls when checked */}
-      {checked && (
+      {expanded && (
         <View style={s.controls}>
           {/* Severity segmented control */}
           <View style={s.segmented}>
@@ -183,6 +212,9 @@ const ChecklistItemCard = memo(function ChecklistItemCard({
                 📝  Note{note ? ' ✓' : ''}
               </Text>
             </TouchableOpacity>
+            <TouchableOpacity style={s.actionBtn} onPress={handleClearItem}>
+              <Text style={s.clearBtnText}>✕  Clear</Text>
+            </TouchableOpacity>
           </View>
 
           {/* Note input */}
@@ -211,6 +243,7 @@ const ChecklistItemCard = memo(function ChecklistItemCard({
               {photoUris.map(uri => (
                 <TouchableOpacity
                   key={uri}
+                  onPress={() => onPhotoPress(uri)}
                   onLongPress={() => Alert.alert('Remove photo?', undefined, [
                     { text: 'Remove', style: 'destructive', onPress: () => handleRemovePhoto(uri) },
                     { text: 'Cancel', style: 'cancel' },
@@ -231,7 +264,7 @@ const ChecklistItemCard = memo(function ChecklistItemCard({
 
 export function ChecklistScreen() {
   const navigation = useNavigation<Nav>();
-  const { params: { inspectionId, categoryId } } = useRoute<Route>();
+  const { params: { inspectionId, categoryId, scrollToItemId } } = useRoute<Route>();
   const { items: storeItems, updateItem } = useInspectionStore();
   const { categories } = useChecklist();
   const flatListRef = useRef<FlatList<ChecklistTemplateItem>>(null);
@@ -253,6 +286,17 @@ export function ChecklistScreen() {
     [inspectionId, updateItem],
   );
 
+  const [lightboxUri, setLightboxUri] = useState<string | null>(null);
+
+  useEffect(() => {
+    if (!scrollToItemId || !category) return;
+    const index = category.items.findIndex(i => i.id === scrollToItemId);
+    if (index < 0) return;
+    setTimeout(() => {
+      flatListRef.current?.scrollToIndex({ index, animated: true, viewPosition: 0.3 });
+    }, 300);
+  }, []);
+
   if (!category) return null;
 
   function renderItem({ item: templateItem, index }: { item: ChecklistTemplateItem; index: number }) {
@@ -263,6 +307,8 @@ export function ChecklistScreen() {
         templateItem={templateItem}
         storeItem={storeItem}
         onUpdate={handleUpdate}
+        onPhotoPress={setLightboxUri}
+        defaultExpanded={templateItem.id === scrollToItemId}
         onNoteOpen={() => {
           setTimeout(() => {
             flatListRef.current?.scrollToIndex({ index, animated: true, viewPosition: 0 });
@@ -274,6 +320,12 @@ export function ChecklistScreen() {
 
   return (
     <SafeAreaView style={s.root}>
+      <Modal visible={!!lightboxUri} transparent animationType="fade" onRequestClose={() => setLightboxUri(null)}>
+        <TouchableOpacity style={s.lightboxOverlay} activeOpacity={1} onPress={() => setLightboxUri(null)}>
+          {lightboxUri && <Image source={{ uri: lightboxUri }} style={s.lightboxImage} resizeMode="contain" />}
+        </TouchableOpacity>
+      </Modal>
+
       <View style={navBar.bar}>
         <TouchableOpacity style={navBar.backBtn} onPress={() => navigation.goBack()}>
           <Text style={navBar.backText}>‹ Back</Text>
@@ -297,7 +349,7 @@ export function ChecklistScreen() {
         ItemSeparatorComponent={() => <View style={s.separator} />}
         ListFooterComponent={
           <TouchableOpacity
-            style={[s.nextBtn, !nextCategory && s.nextBtnSummary]}
+            style={s.nextBtn}
             onPress={() => nextCategory
               ? navigation.replace('Checklist', { inspectionId, categoryId: nextCategory.id })
               : navigation.navigate('Summary', { inspectionId })
@@ -318,7 +370,7 @@ export function ChecklistScreen() {
 // ─── Styles ───────────────────────────────────────────────────────────────────
 
 const s = StyleSheet.create({
-  root: { flex: 1, backgroundColor: colors.bg },
+  root: { flex: 1, backgroundColor: colors.brand },
   navCenter: { flex: 1, alignItems: 'center' },
   navProgress: { fontSize: 12, color: 'rgba(255,255,255,0.75)', marginTop: 1 },
 
@@ -370,6 +422,7 @@ const s = StyleSheet.create({
   },
   actionBtnActive: { borderColor: colors.brand, backgroundColor: '#EAF4F1' },
   actionBtnText: { fontSize: 13, color: colors.textSecondary, fontWeight: '500' },
+  clearBtnText: { fontSize: 13, color: colors.walkAway, fontWeight: '500' },
 
   noteDoneRow: { flexDirection: 'row', justifyContent: 'flex-end', marginBottom: 4 },
   noteDoneText: { fontSize: 13, fontWeight: '600', color: colors.brand, paddingVertical: 2, paddingHorizontal: 4 },
@@ -386,6 +439,11 @@ const s = StyleSheet.create({
     width: 72, height: 72, borderRadius: radius.sm,
     marginRight: spacing.sm, backgroundColor: colors.border,
   },
+  lightboxOverlay: {
+    flex: 1, backgroundColor: 'rgba(0,0,0,0.92)',
+    alignItems: 'center', justifyContent: 'center',
+  },
+  lightboxImage: { width: '100%', height: '100%' },
   nextBtn: {
     margin: spacing.lg,
     marginTop: 0,
