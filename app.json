@@ -17,6 +17,7 @@
       "bundleIdentifier": "com.buzznode.lotcheck"
     },
     "android": {
+      "package": "com.buzznode.lotcheck",
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#ffffff"
@@ -26,6 +27,12 @@
     },
     "web": {
       "favicon": "./assets/favicon.png"
-    }
+    },
+    "extra": {
+      "eas": {
+        "projectId": "6066d9cb-59be-4069-88f0-71f8f4b0fdca"
+      }
+    },
+    "owner": "buzznode"
   }
 }

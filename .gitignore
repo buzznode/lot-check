@@ -42,3 +42,8 @@ coverage/
 # generated native folders
 /ios
 /android
+
+# credentials and secrets
+google-service-account.json
+credentials.json
+*.aab

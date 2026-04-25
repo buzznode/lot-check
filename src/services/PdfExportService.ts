@@ -1,3 +1,4 @@
+import * as FileSystem from 'expo-file-system';
 import type {
   Inspection,
   InspectionItem,
@@ -6,13 +7,24 @@ import type {
 } from '../types';
 import { computeSummary, verdictLabel } from '../utils/verdict';
 
+const BRAND = '#1A3A5C';
+
+async function toDataUri(uri: string): Promise<string | null> {
+  try {
+    const base64 = await FileSystem.readAsStringAsync(uri, { encoding: 'base64' as any });
+    return `data:image/jpeg;base64,${base64}`;
+  } catch {
+    return null;
+  }
+}
+
 export class PdfExportService {
-  static buildHtml(
+  static async buildHtml(
     inspection: Inspection,
     items: InspectionItem[],
     categories: ChecklistCategory[],
     options: PdfExportOptions
-  ): string {
+  ): Promise<string> {
     const summary = computeSummary(items);
     const date = new Date(inspection.createdAt).toLocaleDateString('en-US', {
       year: 'numeric', month: 'long', day: 'numeric',
@@ -34,39 +46,54 @@ export class PdfExportService {
       : summary.verdict === 'caution' ? '⚠️'
       : '✅';
 
-    const categoryPages = categories.map((category, catIdx) => {
+    const categoryPages = await Promise.all(categories.map(async (category, catIdx) => {
       let rowIdx = 0;
-      const rows = category.items
-        .filter(t => options.includeAllItems || (storeItemMap[t.id]?.flagged ?? false))
-        .map(t => {
-          const si = storeItemMap[t.id];
-          const isChecked = si?.checked ?? false;
-          const isFlagged = si?.flagged ?? false;
-          const flagClass = !isChecked ? 'u' : isFlagged ? (si?.severity === 'walk_away' ? 'r' : 'a') : 'p';
-          const flagLabel = !isChecked ? 'Not reviewed' : isFlagged ? (si?.severity === 'walk_away' ? 'Walk away' : 'Negotiate') : 'Pass';
-          const rowBg = rowIdx++ % 2 === 0 ? '#fafaf8' : '#ffffff';
-          return `<tr style="background:${rowBg}">
-            <td style="padding:7px 8px;border-bottom:1px solid #f0efe8;font-size:11px;">${t.label}</td>
-            <td style="padding:7px 8px;border-bottom:1px solid #f0efe8;">
+
+      const filteredItems = category.items
+        .filter(t => options.includeAllItems || (storeItemMap[t.id]?.flagged ?? false));
+
+      const rows = await Promise.all(filteredItems.map(async t => {
+        const si = storeItemMap[t.id];
+        const isChecked = si?.checked ?? false;
+        const isFlagged = si?.flagged ?? false;
+        const flagClass = !isChecked ? 'u' : isFlagged ? (si?.severity === 'walk_away' ? 'r' : 'a') : 'p';
+        const flagLabel = !isChecked ? 'Not reviewed' : isFlagged ? (si?.severity === 'walk_away' ? 'Walk away' : 'Negotiate') : 'Pass';
+        const rowBg = rowIdx++ % 2 === 0 ? '#fafaf8' : '#ffffff';
+
+        const photoUris = (isFlagged && si?.photoUris?.length) ? si.photoUris : [];
+        const dataUris = await Promise.all(photoUris.map(toDataUri));
+        const validPhotos = dataUris.filter((d): d is string => d !== null);
+
+        const photoRow = validPhotos.length > 0 ? `
+          <tr style="background:${rowBg}">
+            <td colspan="3" style="padding:4px 8px 10px;border-bottom:1px solid #f0efe8;">
+              <div style="display:flex;gap:6px;flex-wrap:wrap;">
+                ${validPhotos.map(d => `<img src="${d}" style="height:150px;width:auto;border-radius:4px;object-fit:cover;" />`).join('')}
+              </div>
+            </td>
+          </tr>` : '';
+
+        return `<tr style="background:${rowBg}">
+            <td style="padding:7px 8px;border-bottom:${validPhotos.length ? 'none' : '1px solid #f0efe8'};font-size:11px;">${t.label}</td>
+            <td style="padding:7px 8px;border-bottom:${validPhotos.length ? 'none' : '1px solid #f0efe8'};">
               <span class="flag ${flagClass}">${flagLabel}</span>
             </td>
-            <td style="padding:7px 8px;border-bottom:1px solid #f0efe8;font-size:11px;">
+            <td style="padding:7px 8px;border-bottom:${validPhotos.length ? 'none' : '1px solid #f0efe8'};font-size:11px;">
               ${si?.note ? `<div style="font-style:italic;color:#555;">${si.note}</div>` : '—'}
             </td>
-          </tr>`;
-        })
-        .join('');
+          </tr>${photoRow}`;
+      }));
 
       const pageBreak = catIdx > 0 ? 'page-break-before:always;' : '';
 
       return `
 <div style="${pageBreak}padding-top:${catIdx > 0 ? '24px' : '16px'};">
-  ${catIdx > 0 ? `<div style="background:#0F6E56;padding:10px 32px;display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
+  ${catIdx > 0 ? `<div style="background:${BRAND};padding:10px 32px;display:flex;justify-content:space-between;align-items:center;margin-bottom:16px;">
     <div style="color:#fff;font-size:13px;font-weight:600;">${vehicleTitle}</div>
     <div style="color:rgba(255,255,255,0.8);font-size:11px;">${date}</div>
   </div>` : ''}
   <div style="padding:0 32px 8px;">
-    <div style="font-size:15px;font-weight:700;color:#0F6E56;padding-bottom:8px;border-bottom:2px solid #0F6E56;">
+    <div style="font-size:15px;font-weight:700;color:${BRAND};padding-bottom:8px;border-bottom:2px solid ${BRAND};">
       ${category.label}
     </div>
   </div>
@@ -79,11 +106,11 @@ export class PdfExportService {
           <th style="text-align:left;font-size:9px;color:#555;text-transform:uppercase;letter-spacing:0.05em;padding:4px 8px;border-bottom:1px solid #e0dfd8;">Notes</th>
         </tr>
       </thead>
-      <tbody>${rows}</tbody>
+      <tbody>${rows.join('')}</tbody>
     </table>
   </div>
 </div>`;
-    }).join('');
+    }));
 
     return `<!DOCTYPE html>
 <html>
@@ -101,8 +128,7 @@ export class PdfExportService {
 </head>
 <body>
 
-<!-- Header -->
-<div style="background:#0F6E56;padding:24px 32px;display:flex;justify-content:space-between;align-items:flex-start;">
+<div style="background:${BRAND};padding:24px 32px;display:flex;justify-content:space-between;align-items:flex-start;">
   <div>
     <div style="color:#9FE1CB;font-size:11px;font-weight:600;letter-spacing:0.08em;text-transform:uppercase;margin-bottom:4px;">LotCheck</div>
     <div style="color:#ffffff;font-size:20px;font-weight:700;margin-bottom:2px;">${vehicleTitle}</div>
@@ -114,7 +140,6 @@ export class PdfExportService {
   </div>
 </div>
 
-<!-- Metadata strip -->
 <div style="border-bottom:1px solid #e0dfd8;padding:12px 32px;display:flex;gap:32px;">
   <div>
     <div style="font-size:9px;color:#555;text-transform:uppercase;letter-spacing:0.06em;margin-bottom:2px;">Date</div>
@@ -130,7 +155,6 @@ export class PdfExportService {
   </div>
 </div>
 
-<!-- Stats -->
 <div style="padding:16px 32px 16px;border-bottom:1px solid #e0dfd8;display:flex;gap:12px;">
   <div style="flex:1;background:#FCEBEB;border-radius:6px;padding:10px;text-align:center;">
     <div style="font-size:22px;font-weight:700;color:#E24B4A;">${summary.walkAwayCount}</div>
@@ -146,7 +170,7 @@ export class PdfExportService {
   </div>
 </div>
 
-${categoryPages}
+${categoryPages.join('')}
 
 <div style="border-top:1px solid #e0dfd8;padding:10px 32px;margin-top:16px;">
   <span style="font-size:10px;color:#888;">Generated by LotCheck</span>

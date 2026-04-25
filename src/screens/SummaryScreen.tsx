@@ -4,6 +4,7 @@ import {
 } from 'react-native';
 import * as Print from 'expo-print';
 import * as Sharing from 'expo-sharing';
+import * as FileSystem from 'expo-file-system';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -111,9 +112,15 @@ export function SummaryScreen() {
     if (!inspection) return;
     setPdfLoading(true);
     try {
-      const html = PdfExportService.buildHtml(inspection, storeItems, categories, { includeAllItems: true, includePhotos: false });
+      const html = await PdfExportService.buildHtml(inspection, storeItems, categories, { includeAllItems: true, includePhotos: true });
       const { uri } = await Print.printToFileAsync({ html });
-      await Sharing.shareAsync(uri, { mimeType: 'application/pdf', UTI: 'com.adobe.pdf' });
+      const filename = `${inspection.year}-${inspection.make}-${inspection.model}`
+        .replace(/\s+/g, '-').replace(/[^a-zA-Z0-9-]/g, '') + '.pdf';
+      const dir = uri.substring(0, uri.lastIndexOf('/') + 1);
+      const destUri = `${dir}${filename}`;
+      try { await FileSystem.deleteAsync(destUri); } catch {}
+      await FileSystem.moveAsync({ from: uri, to: destUri });
+      await Sharing.shareAsync(destUri, { mimeType: 'application/pdf', UTI: 'com.adobe.pdf' });
     } catch (e) {
       Alert.alert('Export failed', 'Something went wrong generating the PDF.');
     } finally {

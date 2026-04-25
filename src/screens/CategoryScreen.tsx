@@ -16,7 +16,6 @@ import { colors, spacing, radius, typography, navBar } from '../theme';
 import { ProgressBar } from '../components/ProgressBar';
 import type { RootStackParamList } from '../navigation/RootNavigator';
 import type { ChecklistCategory } from '../types';
-
 type Nav = NativeStackNavigationProp<RootStackParamList, 'Category'>;
 type Route = RouteProp<RootStackParamList, 'Category'>;
 
