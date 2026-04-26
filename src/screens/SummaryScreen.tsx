@@ -4,7 +4,7 @@ import {
 } from 'react-native';
 import * as Print from 'expo-print';
 import * as Sharing from 'expo-sharing';
-import * as FileSystem from 'expo-file-system';
+import * as FileSystem from 'expo-file-system/legacy';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useNavigation, useRoute } from '@react-navigation/native';
 import type { NativeStackNavigationProp } from '@react-navigation/native-stack';
@@ -114,11 +114,20 @@ export function SummaryScreen() {
     try {
       const html = await PdfExportService.buildHtml(inspection, storeItems, categories, { includeAllItems: true, includePhotos: true });
       const { uri } = await Print.printToFileAsync({ html });
-      const filename = `${inspection.year}-${inspection.make}-${inspection.model}`
-        .replace(/\s+/g, '-').replace(/[^a-zA-Z0-9-]/g, '') + '.pdf';
+      const now = new Date();
+      const ts = [
+        now.getFullYear(),
+        String(now.getMonth() + 1).padStart(2, '0'),
+        String(now.getDate()).padStart(2, '0'),
+      ].join('') + '_' + [
+        String(now.getHours()).padStart(2, '0'),
+        String(now.getMinutes()).padStart(2, '0'),
+        String(now.getSeconds()).padStart(2, '0'),
+      ].join('');
+      const base = `${inspection.year}_${inspection.make}_${inspection.model}`
+        .replace(/\s+/g, '_').replace(/[^a-zA-Z0-9_]/g, '');
       const dir = uri.substring(0, uri.lastIndexOf('/') + 1);
-      const destUri = `${dir}${filename}`;
-      try { await FileSystem.deleteAsync(destUri); } catch {}
+      const destUri = `${dir}${base}_${ts}.pdf`;
       await FileSystem.moveAsync({ from: uri, to: destUri });
       await Sharing.shareAsync(destUri, { mimeType: 'application/pdf', UTI: 'com.adobe.pdf' });
     } catch (e) {

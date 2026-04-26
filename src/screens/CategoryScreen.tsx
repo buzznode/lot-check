@@ -152,8 +152,7 @@ export function CategoryScreen() {
             <Text style={[typography.h3, { color: colors.brand }]}>
               {totalChecked === totalItems
                 ? 'View Summary'
-                : `
-              w${totalChecked}/${totalItems})`}
+                : `View Summary (${totalChecked}/${totalItems})`}
             </Text>
           </TouchableOpacity>
         </View>
