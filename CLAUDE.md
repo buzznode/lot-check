@@ -94,19 +94,37 @@ Home -> NewInspection -> Category -> Checklist -> Summary
 - useChecklist hook (src/hooks/useChecklist.ts)
 - checklist.json with all 57 items (src/data/checklist.json)
 - PdfExportService with buildHtml (src/services/PdfExportService.ts)
-- RootNavigator stub (src/navigation/RootNavigator.tsx)
+- RootNavigator (src/navigation/RootNavigator.tsx)
+- HomeScreen, NewInspectionScreen, CategoryScreen, ChecklistScreen, SummaryScreen — all complete
+- App.tsx wired to RootNavigator
+- RevenueCat IAP integrated (react-native-purchases v10)
+  - Android production key: goog_qzcEMTyyQXMevSXAHbtUQaLWgkU (in App.tsx)
+  - iOS key: placeholder — needs real key once Apple approves developer account
+  - purchaseStore uses real RevenueCat calls (fetchAndPurchase, restorePurchases, checkEntitlement)
+  - SummaryScreen has purchase flow + "Restore purchase" link
+- Google Play: internal testing track live, version code 5 (v1.0.0) submitted
 
-## What to build next (in order)
+## RevenueCat status (as of 2026-04-27)
 
-1. HomeScreen
-2. NewInspectionScreen
-3. CategoryScreen
-4. ChecklistScreen
-5. SummaryScreen
-6. Update App.tsx to use RootNavigator
-7. RevenueCat IAP integration
-8. Supabase optional cloud backup
-9. App Store and Play Store submission prep
+- Project: LotCheck (app.revenuecat.com)
+- Entitlement: `pdf_export`
+- Product: PDF Export, `pdf_export`, Non-consumable, $3.99 USD
+- Offering: `default` with `lifetime` package
+- Store connection: LotCheck (Play Store) connected — credentials showing "needs attention" (Google Play permissions propagation issue, may resolve on its own)
+- Test Store API key: test_PrSaixOPZgXPSSKcyEUYWQGTdwQ
+- Production Android key: goog_qzcEMTyyQXMevSXAHbtUQaLWgkU (active in code)
+- iOS key: not yet created — waiting on Apple developer account approval
+
+## What's still pending
+
+1. **RevenueCat credentials warning** — Google Play service account permissions may need time to propagate; check dashboard and retry
+2. **iOS submission** — waiting on Apple developer account approval; once approved:
+   - Add iOS app in RevenueCat dashboard
+   - Create `pdf_export` product in App Store Connect
+   - Get `appl_` API key and replace placeholder in App.tsx
+   - Build and submit iOS binary via EAS
+3. **Supabase optional cloud backup** — not yet integrated (optional, post-launch)
+4. **Full Play Store listing** — store description, screenshots already in assets/store/, needs to be filled in Play Console for production release
 
 ## App.tsx current state
 

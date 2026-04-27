@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import {
   View, Text, ScrollView, TouchableOpacity, StyleSheet, Share, Alert, ActivityIndicator,
 } from 'react-native';
@@ -31,8 +31,10 @@ export function SummaryScreen() {
   const { params: { inspectionId } } = useRoute<Route>();
   const { inspections, getItems } = useInspectionStore();
   const { itemMap, categories } = useChecklist();
-  const { isUnlocked } = usePurchaseStore();
+  const { isUnlocked, fetchAndPurchase, restorePurchases, checkEntitlement } = usePurchaseStore();
   const canExportPdf = isUnlocked || __DEV__;
+
+  useEffect(() => { checkEntitlement(); }, []);
   const [pdfLoading, setPdfLoading] = useState(false);
 
   const inspection = inspections.find(i => i.id === inspectionId);
@@ -97,16 +99,22 @@ export function SummaryScreen() {
     await Share.share({ message: buildShareText() });
   }
 
+  async function handleRestore() {
+    const restored = await restorePurchases();
+    if (restored) {
+      Alert.alert('Restored', 'Your PDF export unlock has been restored.');
+    } else {
+      Alert.alert('Nothing to restore', 'No previous purchase found for this account.');
+    }
+  }
+
   async function handlePdfExport() {
     if (!canExportPdf) {
-      Alert.alert(
-        'Unlock PDF Export',
-        'Export a full professional report as a PDF for $3.99 — one-time purchase.',
-        [
-          { text: 'Not Now', style: 'cancel' },
-          { text: 'Unlock — $3.99', onPress: () => Alert.alert('Coming Soon', 'In-app purchase will be available in the next update.') },
-        ],
-      );
+      const result = await fetchAndPurchase();
+      if (result.userCancelled) return;
+      if (!result.success) {
+        Alert.alert('Purchase failed', result.error ?? 'Something went wrong. Please try again.');
+      }
       return;
     }
     if (!inspection) return;
@@ -248,6 +256,12 @@ export function SummaryScreen() {
               }
             </View>
           </TouchableOpacity>
+
+          {!canExportPdf && (
+            <TouchableOpacity onPress={handleRestore} activeOpacity={0.7}>
+              <Text style={s.restoreText}>Restore purchase</Text>
+            </TouchableOpacity>
+          )}
         </View>
       </ScrollView>
     </SafeAreaView>
@@ -338,4 +352,5 @@ const s = StyleSheet.create({
     paddingVertical: 3,
   },
   pdfLockText: { fontSize: 12, fontWeight: '700', color: colors.textInverse },
+  restoreText: { fontSize: 13, color: 'rgba(255,255,255,0.6)', textAlign: 'center', textDecorationLine: 'underline' },
 });
